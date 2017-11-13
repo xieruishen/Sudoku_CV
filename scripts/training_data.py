@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from sklearn import datasets
-import math
 
 # Load the dataset (handwriting data MNIST)
 dataset = datasets.fetch_mldata("MNIST Original")
@@ -77,7 +76,5 @@ responses = np.concatenate((responses, temp_responses))
 #     cv2.waitKey(0)
 #
 # print samples.shape
-
-
 
 print "training complete"
