@@ -33,6 +33,7 @@ chars_list = []
 for d in range(0, 10):
     chars_list.append(str(d))
 
+
 # Handle desired fonts
 fhandle = open('fonts_list.txt', 'r')
 desired_fonts = []
