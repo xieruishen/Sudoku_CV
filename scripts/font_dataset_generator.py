@@ -1,4 +1,6 @@
 """
+Modified by Khang Vu, 2017
+
 This script generates digit images from fonts
 All basic fonts are stored in folder "./fonts"
 Chosen fonts to export are in "fonts_list.txt"
