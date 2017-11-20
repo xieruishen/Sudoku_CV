@@ -1,3 +1,8 @@
+"""
+by Khang Vu & Sherrie Shen, 2017
+
+Helper file to handle images
+"""
 import numpy as np
 
 import cv2

@@ -15,6 +15,7 @@ from image_helper import *
 from training_data import samples, responses
 
 
+print "Extracting hog feature"
 hog_features, pp = extract_hog_28(samples)
 
 print "Performing the training"

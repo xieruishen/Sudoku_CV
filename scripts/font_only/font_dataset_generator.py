@@ -1,20 +1,19 @@
 """
-Modified by Khang Vu, 2017
+By Khang Vu, 2017
 
 This script generates digit images from fonts
 All basic fonts are stored in folder "./fonts"
-Chosen fonts to export are in "fonts_list.txt"
+Use either chosen fonts in "fonts_list.txt" or all fonts in system fonts "./fonts"
 """
-
-from PIL import Image, ImageDraw, ImageFont
-import os
 import glob
+import os
+from PIL import Image, ImageDraw, ImageFont
 
 # Font size
 fontSize = 90
 
 # Output image size
-imgSize = (130, 130)
+imgSize = (150, 150)
 
 # Background color of the image
 background_color = (0, 0, 0)
@@ -35,7 +34,6 @@ chars_list = []
 for d in range(0, 10):
     chars_list.append(str(d))
 
-
 # Handle desired fonts
 fhandle = open('fonts_list.txt', 'r')
 desired_fonts = []
@@ -45,31 +43,61 @@ for line in fhandle:
 # Handle all system fonts
 sys_fonts = glob.glob("./fonts/*.ttf")
 
-# Number of fonts
-font_count = 0
 
-for sys_font in sys_fonts:
-    # Only pick desired fonts
+def take_all_fonts():
+    font_count = 0
+    for sys_font in sys_fonts:
+        font_count += 1
+        path = sys_font
+        desired_font = ImageFont.truetype(path, fontSize)
+
+        for ch in chars_list:
+            # For each char, draw a blank image and put text on the image
+            image = Image.new("RGB", imgSize, background_color)
+            draw = ImageDraw.Draw(image)
+            draw.text(position, ch, char_color, font=desired_font)
+
+            # Save the image
+            file_name = '%c_%i.jpg' % (ch, font_count)
+            file_name = os.path.join(dataset_path, file_name)
+            image.save(file_name)
+
+    print font_count
+
+
+def take_desired_fonts():
+    font_count = 0
     for desired_font in desired_fonts:
+        # Only pick desired fonts
         f_lower = desired_font.lower()
-        s_lower = sys_font.lower()
+        found = False
+        for sys_font in sys_fonts:
+            s_lower = sys_font.lower()
 
-        # Check if a desired font is in system fonts
-        if f_lower in s_lower:
-            font_count += 1
-            path = sys_font
-            desired_font = ImageFont.truetype(path, fontSize)
+            # Check if a desired font is in system fonts
+            if f_lower in s_lower:
+                found = True
+                font_count += 1
+                path = sys_font
+                desired_font = ImageFont.truetype(path, fontSize)
 
-            for ch in chars_list:
-                # For each char, draw a blank image and put text on the image
-                image = Image.new("RGB", imgSize, background_color)
-                draw = ImageDraw.Draw(image)
-                draw.text(position, ch, char_color, font=desired_font)
+                for ch in chars_list:
+                    # For each char, draw a blank image and put text on the image
+                    image = Image.new("RGB", imgSize, background_color)
+                    draw = ImageDraw.Draw(image)
+                    draw.text(position, ch, char_color, font=desired_font)
 
-                # Save the image
-                file_name = '%c_%i.jpg' % (ch, font_count)
-                file_name = os.path.join(dataset_path, file_name)
-                image.save(file_name)
+                    # Save the image
+                    file_name = '%c_%i.jpg' % (ch, font_count)
+                    file_name = os.path.join(dataset_path, file_name)
+                    image.save(file_name)
+
+        if not found:
+            print "Cannot find font %s" % f_lower
+
+    print font_count
 
 
-
+# Choose either all fonts or desired fonts
+take_all_fonts()
+# take_desired_fonts()

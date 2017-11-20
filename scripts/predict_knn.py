@@ -13,9 +13,14 @@ def recognize(digit_image=None, will_show_img=True):
     if im is None:
         return
 
-    # TODO: Resize if image is too big
-    if False:
-        im = cv2.resize(im, None, fx=0.4, fy=0.4, interpolation=cv2.INTER_AREA)
+    # If the image is too big, resize it
+    max_size = 800.0
+    if im.shape[0] > max_size or im.shape[1] > max_size:
+        if im.shape[0] > im.shape[1]:
+            ratio = max_size / im.shape[0]
+        else:
+            ratio = max_size / im.shape[1]
+        im = cv2.resize(im, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_AREA)
 
     # Output image
     out = np.zeros(im.shape, np.uint8)

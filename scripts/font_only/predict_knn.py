@@ -1,3 +1,8 @@
+"""
+By Sherrie Shen & Khang Vu, 2017
+
+Predict all digits in an image
+"""
 import numpy as np
 
 import cv2
@@ -13,9 +18,14 @@ def recognize(digit_image=None, will_show_img=True):
     if im is None:
         return
 
-    # TODO: Resize if image is too big
-    if False:
-        im = cv2.resize(im, None, fx=0.4, fy=0.4, interpolation=cv2.INTER_AREA)
+    # If the image is too big, resize it
+    max_size = 800.0
+    if im.shape[0] > max_size or im.shape[1] > max_size:
+        if im.shape[0] > im.shape[1]:
+            ratio = max_size / im.shape[0]
+        else:
+            ratio = max_size / im.shape[1]
+        im = cv2.resize(im, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_AREA)
 
     # Output image
     out = np.zeros(im.shape, np.uint8)
@@ -25,11 +35,10 @@ def recognize(digit_image=None, will_show_img=True):
     gray = cv2.cvtColor(blur, cv2.COLOR_BGR2GRAY)
     th = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 
-    imhelp.show_image(th)
-
     # Find contours in the image
     im2, contours, hierarchy = cv2.findContours(th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+    imhelp.show_image(th)
     for cnt in contours:
         if cv2.contourArea(cnt) > 50:
             [x, y, w, h] = cv2.boundingRect(cnt)
@@ -42,7 +51,7 @@ def recognize(digit_image=None, will_show_img=True):
 
                 # Resize the image
                 roi = cv2.resize(black_image, (28, 28), interpolation=cv2.INTER_AREA)
-                roi = cv2.dilate(roi, (10, 10), iterations=2)
+                roi = cv2.dilate(roi, (10, 10), iterations=1)
 
                 # imhelp.show_image(roi)
 
@@ -55,7 +64,7 @@ def recognize(digit_image=None, will_show_img=True):
 
                 # Put text on the output image
                 string = str(int((results.ravel())))
-                cv2.putText(out, string, (x, y + h), 0, 1, (0, 255, 0))
+                cv2.putText(out, string, (x, y + h), 0, 1, (255, 255, 255))
 
     if will_show_img:
         # Show the output image
@@ -63,5 +72,5 @@ def recognize(digit_image=None, will_show_img=True):
 
 
 if __name__ == "__main__":
-    # recognize("test_imgs/photo_1.jpg", True)
-    recognize("test_imgs/photo_3.jpg", True)
+    recognize("test_imgs/photo_5.jpg", True)
+    # recognize("test_imgs/photo_3.jpg", True)
