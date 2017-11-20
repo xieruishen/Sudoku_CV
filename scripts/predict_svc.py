@@ -9,7 +9,7 @@ Related: training_data.py, training_svc.py
 
 import numpy as np
 import cv2
-from image_helper import *
+import image_helper as imhelp
 from skimage.feature import hog
 from sklearn.externals import joblib
 
@@ -24,60 +24,59 @@ def recognize(classifer_path=None, digit_image=None, will_show_img=True):
     if im is None:
         return
 
-    # Convert to grayscale and apply Gaussian filtering
-    im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    im_gray = cv2.GaussianBlur(im_gray, (5, 5), 0)
+    # TODO: Resize if image is too big
+    if False:
+        im = cv2.resize(im, None, fx=0.4, fy=0.4, interpolation=cv2.INTER_AREA)
 
-    # Threshold the image
-    ret, im_th = cv2.threshold(im_gray, 90, 255, cv2.THRESH_BINARY_INV)
+    # Output image
+    out = np.zeros(im.shape, np.uint8)
+
+    # Image process: blur, binary, threshold
+    blur = cv2.GaussianBlur(im, (11, 11), 0)
+    gray = cv2.cvtColor(blur, cv2.COLOR_BGR2GRAY)
+    th = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+    imhelp.show_image(th)
 
     # Find contours in the image
-    im2, contours, hierarchy = cv2.findContours(im_th.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    im2, contours, hierarchy = cv2.findContours(th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # For each rectangular region, calculate HOG features and predict
     # the digit using Linear SVM.
     for cnt in contours:
         if cv2.contourArea(cnt) > 50:
             [x, y, w, h] = cv2.boundingRect(cnt)
+            if h > 20:
+                # Draw the rectangles in the original image
+                cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-            # Draw the rectangles in the original image
-            cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                # Put the image into a black image
+                black_image = imhelp.put_to_black(th, x, y, w, h)
 
-            # Put the image into a black image
-            roi = im_th[y:y + h, x:x + w]
-            if h > w:
-                b_size = int(h * 1.6)
-            else:
-                b_size = int(w * 1.6)
+                # Resize the image
+                roi = cv2.resize(black_image, (28, 28), interpolation=cv2.INTER_AREA)
+                roi = cv2.dilate(roi, (10, 10))
 
-            b_y = int((b_size - h) / 2)
-            b_x = int((b_size - w) / 2)
-            black_image = np.zeros((b_size, b_size), np.uint8)
-            black_image[b_y: b_y + h, b_x: b_x + w] = roi
+                # imhelp.show_image(roi)
 
-            show_image(black_image)
+                # Calculate the HOG features
+                roi_hog_fd = hog(roi, orientations=9, pixels_per_cell=(14, 14),
+                                 cells_per_block=(1, 1), visualise=False, block_norm='L2-Hys')
+                roi_hog_fd = pp.transform(np.array([roi_hog_fd], 'float32'))
 
-            # Resize the image
-            roi = cv2.resize(black_image, (28, 28), interpolation=cv2.INTER_AREA)
-            roi = cv2.dilate(roi, (3, 3))
+                # Predict the image
+                nbr = clf.predict(roi_hog_fd)
 
-            # Calculate the HOG features
-            roi_hog_fd = hog(roi, orientations=9, pixels_per_cell=(14, 14), cells_per_block=(1, 1), visualise=False)
-            roi_hog_fd = pp.transform(np.array([roi_hog_fd], 'float32'))
-
-            # Predict image
-            nbr = clf.predict(roi_hog_fd)
-
-            # Put yellow text (predicted digit) above  digit
-            print int(nbr[0])
-            cv2.putText(im, str(int(nbr[0])), (x, y), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 255), 3)
+                # Put text on the output image
+                string = str(int(nbr[0]))
+                cv2.putText(out, string, (x, y + h), 0, 1, (0, 255, 0))
 
     if will_show_img:
-        cv2.namedWindow("Resulting Image with Rectangular ROIs", cv2.WINDOW_NORMAL)
-        cv2.imshow("Resulting Image with Rectangular ROIs", im)
-        cv2.waitKey()
+        # Show the output image
+        imhelp.show_images([im, out])
 
 
 if __name__ == "__main__":
-    # recognize("svc_digits_cls.pkl", "test_imgs/photo_4.jpg", True)
-    recognize("svc_digits_cls.pkl", "test_imgs/photo_1.jpg", True)
+    recognize("svc_digits_cls.pkl", "test_imgs/photo_2.jpg", True)
+    # recognize("svc_digits_cls_no_mnist.pkl", "test_imgs/photo_1.jpg", True)
+

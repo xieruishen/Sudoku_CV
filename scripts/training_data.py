@@ -1,7 +1,9 @@
+from collections import Counter
+
 import cv2
 import numpy as np
 from sklearn import datasets
-from image_helper import *
+import image_helper as imhelp
 
 """
 Generate training data
@@ -46,28 +48,20 @@ for n in range(10):
                 if h < 22 and w < 1.5 * h:
                     count += 1
 
-                    # Draw the rectangles in the original image
-                    # cv2.rectangle(im2, (x, y), (x + w, y + h), (255, 255, 255), 1)
-
                     # Put the image into a black image
-                    roi = im[y:y + h, x:x + w]
-                    if h > w:
-                        b_size = int(h * 1.6)
-                    else:
-                        b_size = int(w * 1.6)
-                    black_image = np.zeros((b_size, b_size), np.uint8)
-                    b_y = int((b_size - h) / 2)
-                    b_x = int((b_size - w) / 2)
-                    black_image[b_y: b_y + h, b_x: b_x + w] = roi
+                    black_image = imhelp.put_to_black(im, x, y, w, h)
 
                     # Reshape the image
-                    roismall = cv2.resize(black_image, (28, 28))
-                    roismall.shape = 784
-                    roismall = np.float32(roismall)
+                    roi = cv2.resize(black_image, (28, 28), interpolation=cv2.INTER_AREA)
+                    # if n == 2:
+                        # imhelp.show_image(roi)
+                    roi.shape = 784
+                    roi = np.float32(roi)
 
                     # Add to data set
-                    temp_samples.append(roismall)
-                    temp_responses.append(n)
+                    for _ in range(30):
+                        temp_samples.append(roi)
+                        temp_responses.append(n)
 
         print n, m, count
 
@@ -96,42 +90,36 @@ for n in range(10):
                 if h > 30 and 10 < w < 1.5 * h:
                     count += 1
 
-                    # Draw the rectangles in the original image
-                    # cv2.rectangle(im_f, (x, y), (x + w, y + h), (255, 255, 255), 1)
-
                     # Put the image into a black image
-                    roi = im_f[y:y + h, x:x + w]
-                    if h > w:
-                        b_size = int(h * 1.6)
-                    else:
-                        b_size = int(w * 1.6)
-
-                    b_y = int((b_size - h) / 2)
-                    b_x = int((b_size - w) / 2)
-                    black_image = np.zeros((b_size, b_size), np.uint8)
-                    black_image[b_y: b_y + h, b_x: b_x + w] = roi
+                    black_image = imhelp.put_to_black(im_f, x, y, w, h)
 
                     # Reshape the image
-                    roismall = cv2.resize(black_image, (28, 28))
-                    roismall.shape = 784
-                    roismall = np.float32(roismall)
+                    roi = cv2.resize(black_image, (28, 28), interpolation=cv2.INTER_AREA)
+                    roi.shape = 784
+                    roi = np.float32(roi)
 
                     # Add to data set
-                    for _ in range(30):
-                        temp_samples.append(roismall)
-                        temp_responses.append(n)
+                    # for _ in range(30):
+                    #     temp_samples.append(roi)
+                    #     temp_responses.append(n)
 
         print n, m, count
 
-# samples = np.concatenate((samples, temp_samples), axis=0)
-# responses = np.concatenate((responses, temp_responses))
+samples = np.concatenate((samples, temp_samples), axis=0)
+responses = np.concatenate((responses, temp_responses))
+
+# samples = np.array(temp_samples, dtype=np.float32)
+# responses = np.array(temp_responses, dtype=np.int)
 
 # print samples[70010]
-# for i in range(70001, 70002):
-#     im3 = samples[i]
-#     im3.shape = (28, 28)
-#     show_image(im3)
+# for i in range(1, 70000):
+#     if responses[i] == 1:
+#         im3 = samples[i]
+#         im3.shape = (28, 28)
+#         imhelp.show_image(im3)
 
 print samples.shape
 
-print "data complete"
+print "Count of digits in dataset", Counter(responses)
+
+print "Data complete"
