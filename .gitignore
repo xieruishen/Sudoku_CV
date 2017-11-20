@@ -1,6 +1,6 @@
 # Font images
-scripts/font_images/*
-scripts/font_only/font_images/*
+scripts/font_images/
+scripts/font_only/font_images/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
