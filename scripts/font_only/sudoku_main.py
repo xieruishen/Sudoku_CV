@@ -1,5 +1,4 @@
 import numpy as np
-
 import cv2
 import rospy
 import time
@@ -10,9 +9,10 @@ from sensor_msgs.msg import Image
 from irl.srv import arm_cmd
 import get_sudoku
 
+
 class SudokuMain(object):
     """
-    The master class of the game Set
+    The master class of the game Sudoku
     """
 
     def __init__(self, n=4):
@@ -22,19 +22,28 @@ class SudokuMain(object):
         # init ROS subscribers to camera and status
         self.status_sub = rospy.Subscriber('arm_cmd_status', String, self.status_callback, queue_size=10)
         self.image_sub = rospy.Subscriber("usb_cam/image_raw", Image, self.img_callback)
-        self.pub = rospy.Publisher('arm_cmd', String, queue_size=10)
 
         # For the image
         self.bridge = CvBridge()
 
+        # Edwin's status: 0 = busy, 1 = free
         self.status = 0
+
+        # Video frame
         self.frame = None
+
+        # x, y, z positions of Edwin
         self.x = 0
         self.y = 0
         self.z = 0
 
-        self.num_cards = n
+        # Sudoku size, either 4 or 9
+        self.n = n
+
+        # Captured image from the camera
         self.sudoku_image = None
+
+        # Sudoku object
         self.sudoku = None
 
     def status_callback(self, data):
@@ -47,6 +56,11 @@ class SudokuMain(object):
             self.status = 1
 
     def img_callback(self, data):
+        """
+        Get image from usb camera
+        :param data: image
+        :return: None
+        """
         try:
             self.frame = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -72,7 +86,7 @@ class SudokuMain(object):
         while self.status == 0:
             pass
 
-    def xyz_move(self, x, y, z):
+    def move_xyz(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
@@ -102,8 +116,11 @@ class SudokuMain(object):
         self.move_wrist(wrist_value)
 
     def move_to_center(self):
-
-        self.xyz_move(x=-1500, y=3100, z=4700)
+        """
+        Move edwin to the center position where it can take a good picture
+        :return: None
+        """
+        self.move_xyz(x=-1500, y=3100, z=4700)
         self.check_completion()
         self.move_head(hand_value=3400, wrist_value=4280)
 
@@ -127,12 +144,18 @@ class SudokuMain(object):
                 break
 
     def run(self):
+        """
+        Main function that runs everything
+        :return: None
+        """
         self.move_to_center()
         self.check_completion()
         self.capture_piture()
         self.check_completion()
-        self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.num_cards)
+        self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.n)
         self.sudoku.print_sudoku()
+
+        # TODO: Move the arm to write the solution
         # self.capture_video()
 
 

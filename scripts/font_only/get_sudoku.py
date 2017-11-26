@@ -23,23 +23,20 @@ def get_edges(cnt):
     b = [-1, -1]
     c = [-1, -1]
     d = [-1, -1]
+
     for element in cnt:
         point = element[0]
-        if a[0] == -1 or a[0] + a[1] > point[0] + point[1]:
-            a[0] = point[0]
-            a[1] = point[1]
+        if a[0] + a[1] > point[0] + point[1] or a[0] == -1:
+            a = point
 
-        if d[0] == -1 or d[0] + d[1] < point[0] + point[1]:
-            d[0] = point[0]
-            d[1] = point[1]
+        if d[0] + d[1] < point[0] + point[1] or d[0] == -1:
+            d = point
 
-        if b[0] == -1 or b[0] - b[1] < point[0] - point[1]:
-            b[0] = point[0]
-            b[1] = point[1]
+        if b[0] - b[1] < point[0] - point[1] or b[0] == -1:
+            b = point
 
-        if c[0] == -1 or c[1] - c[0] < point[1] - point[0]:
-            c[0] = point[0]
-            c[1] = point[1]
+        if c[1] - c[0] < point[1] - point[0] or c[0] == -1:
+            c = point
 
     return a, b, c, d
 
@@ -47,6 +44,7 @@ def get_edges(cnt):
 def get_grid(im=None, image_path=None):
     """
     Get a sudoku grid from a captured image
+    :param im: image object
     :param (String) image_path: path to sudoku image
     :return: sudoku grid image after perspective transformation
     :rtp: [[uint8]]
@@ -147,7 +145,9 @@ def from_image(im=None, image_path=None, n=4):
 
 
 if __name__ == "__main__":
-    sudoku = from_image(image_path="test_imgs/sudoku_3.jpg", n=4)
+    im = cv2.imread("test_imgs/sudoku_3.jpg")
+    imhelp.show_image(im)
+    sudoku = from_image(im=im, n=4)
 
     # Print solution
     print "r c number"

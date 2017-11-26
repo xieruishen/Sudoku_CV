@@ -162,5 +162,5 @@ def recognize_all(im=None, image_path=None, will_show_img=False):
 
 
 if __name__ == "__main__":
-    recognize_all(image_path="test_imgs/sudoku_2.jpg", will_show_img=True)
+    recognize_one(image_path="test_imgs/photo_4.jpg", will_show_img=True)
     # recognize_all(image_path="test_imgs/photo_3.jpg", will_show_img=True)
