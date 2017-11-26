@@ -62,7 +62,7 @@ def take_all_fonts():
             file_name = os.path.join(dataset_path, file_name)
             image.save(file_name)
 
-    print font_count
+    print "Total fonts: %d" % font_count
 
 
 def take_desired_fonts():
@@ -95,7 +95,7 @@ def take_desired_fonts():
         if not found:
             print "Cannot find font %s" % f_lower
 
-    print font_count
+    print "Total fonts: %d" % font_count
 
 
 # Choose either all fonts or desired fonts

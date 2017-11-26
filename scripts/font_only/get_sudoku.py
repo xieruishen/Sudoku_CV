@@ -1,12 +1,20 @@
+"""
+By Khang Vu, 2017
+
+This script takes a captured sudoku image and parses into a sudoku instance
+It uses predict_knn to predict numbers in the sudoku image
+Related: predict_knn.py, sudoku.py
+"""
 import predict_knn as knn
 import numpy as np
 import cv2
 import image_helper as imhelp
+from sudoku_algorithm.sudoku import Sudoku
 
 
 def get_edges(cnt):
     """
-    Helper func returns 4 edges from contours that mark the sudoku grid
+    Helper function returns 4 edges from contours that mark the sudoku grid
     :param cnt: contours
     :return: an array of 4 points a, b, c, d
     :rtp: [(int, int)]
@@ -36,14 +44,15 @@ def get_edges(cnt):
     return a, b, c, d
 
 
-def get_grid(image_path):
+def get_grid(im=None, image_path=None):
     """
-    Get a sudoku grid from an sudoku image
+    Get a sudoku grid from a captured image
     :param (String) image_path: path to sudoku image
     :return: sudoku grid image after perspective transformation
     :rtp: [[uint8]]
     """
-    im = cv2.imread(image_path)
+    if im is None:
+        im = cv2.imread(image_path)
 
     if im is None:
         return
@@ -82,11 +91,19 @@ def get_grid(image_path):
     M = cv2.getPerspectiveTransform(pts1, pts2)
     sudoku_grid = cv2.warpPerspective(th, M, (size, size))
 
+    imhelp.show_image(sudoku_grid)
     return sudoku_grid
 
 
-def parse_sudoku(grid, n=9):
+def parse_sudoku(grid, n=4):
+    """
+    Parse a sudoku grid (image) into a Sudoku instance
+    :param grid: an image
+    :param n: whether the sudoku is 4x4 or 9x9
+    :return: a Sudoku instance
+    """
     box_len = len(grid) / n
+    problem_set = []
 
     for i in range(n):
         for j in range(n):
@@ -103,8 +120,31 @@ def parse_sudoku(grid, n=9):
 
             number = knn.recognize_one(im=cell, adapt_threshold=False)
 
+            if number != 0:
+                problem_set.append([i, j, number])
+
+    return Sudoku(n=int(np.sqrt(n)), problem_set=problem_set)
+
+
+def from_image(im=None, image_path=None, n=4):
+    # Try to get a sudoku grid from an image
+    sudoku_grid = get_grid(im=im, image_path=image_path)
+
+    # Try to parse the grid into a sudoku object
+    sudoku = parse_sudoku(grid=sudoku_grid, n=n)
+
+    # Solve it
+    sudoku.print_sudoku()
+    sudoku.solve()
+    sudoku.print_sudoku()
+
+    return sudoku
+
 
 if __name__ == "__main__":
-    sudoku_grid = get_grid(image_path="test_imgs/sudoku_2.jpg")
-    imhelp.show_image(sudoku_grid)
-    parse_sudoku(grid=sudoku_grid, n=9)
+    sudoku = from_image(image_path="test_imgs/sudoku_3.jpg", n=4)
+
+    # Print solution
+    print "r c number"
+    for cell in sudoku.solution:
+        print cell.row, cell.col, cell.get_number()

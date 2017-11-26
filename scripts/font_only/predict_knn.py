@@ -2,6 +2,8 @@
 By Sherrie Shen & Khang Vu, 2017
 
 Using knn to predict digits in an image
+This will use the classifier from training_knn.py
+Related: training_knn.py
 """
 import numpy as np
 
@@ -11,7 +13,7 @@ import image_helper as imhelp
 from training_knn import clf
 
 
-def recognize_one(im=None, image_path=None, will_show_img=True, adapt_threshold=True):
+def recognize_one(im=None, image_path=None, will_show_img=False, adapt_threshold=True):
     """
     Recognizes a digit in an image
     :param (array) im: input image. If None, use image_path
@@ -87,13 +89,13 @@ def recognize_one(im=None, image_path=None, will_show_img=True, adapt_threshold=
     cv2.putText(out, str(result), (x, y + h), 0, 1, (255, 255, 255))
 
     if will_show_img:
-        # Show the output image
+        # Show the output image, just for testing
         imhelp.show_images([im, out])
 
     return result
 
 
-def recognize_all(im=None, image_path=None, will_show_img=True):
+def recognize_all(im=None, image_path=None, will_show_img=False):
     """
     Recognizes all digits in an image
     :param (array) im: input image. If None, use image_path
@@ -155,7 +157,7 @@ def recognize_all(im=None, image_path=None, will_show_img=True):
                 cv2.putText(out, string, (x, y + h), 0, 1, (255, 255, 255))
 
     if will_show_img:
-        # Show the output image
+        # Show the output image, just for testing
         imhelp.show_images([im, out])
 
 
