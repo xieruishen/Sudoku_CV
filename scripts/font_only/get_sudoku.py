@@ -105,6 +105,9 @@ def parse_sudoku(grid, n=4):
     box_len = len(grid) / n
     problem_set = []
 
+    # Output image
+    out = np.zeros(grid.shape, np.uint8)
+
     for i in range(n):
         for j in range(n):
             # Get cell(i, j) from the grid
@@ -122,7 +125,9 @@ def parse_sudoku(grid, n=4):
 
             if number != 0:
                 problem_set.append([i, j, number])
+                cv2.putText(out, str(number), (j * box_len + h/2, i * box_len + h), 0, 1, (255, 255, 255))
 
+    imhelp.show_image(out)
     return Sudoku(n=int(np.sqrt(n)), problem_set=problem_set)
 
 
