@@ -1,12 +1,14 @@
-import numpy as np
-import cv2
-import rospy
 import time
 
+import cv2
+import numpy as np
+import rospy
 from cv_bridge import CvBridgeError, CvBridge
-from std_msgs.msg import String
-from sensor_msgs.msg import Image
+from irl.msg import Edwin_Shape
 from irl.srv import arm_cmd
+from sensor_msgs.msg import Image
+from std_msgs.msg import String
+
 import get_sudoku
 
 
@@ -20,14 +22,18 @@ class SudokuMain(object):
         rospy.init_node('sudoku_gamemaster', anonymous=True)
 
         # init ROS subscribers to camera and status
-        self.status_sub = rospy.Subscriber('arm_cmd_status', String, self.status_callback, queue_size=10)
+        rospy.Subscriber('arm_cmd_status', String, self.status_callback, queue_size=10)
+        rospy.Subscriber('writing_status', String, self.writing_status_callback, queue_size=20)
         self.image_sub = rospy.Subscriber("usb_cam/image_raw", Image, self.img_callback)
+
+        self.write_pub = rospy.Publisher('/write_cmd', Edwin_Shape, queue_size=10)
 
         # For the image
         self.bridge = CvBridge()
 
         # Edwin's status: 0 = busy, 1 = free
         self.status = 0
+        self.writing_status = 1
 
         # Video frame
         self.frame = None
@@ -54,6 +60,15 @@ class SudokuMain(object):
         elif data.data == "free":
             print "free"
             self.status = 1
+
+    def writing_status_callback(self, data):
+        print "writing status callback", data.data
+        if data.data == "writing":
+            print "busy"
+            self.writing_status = 0
+        elif data.data == "done":
+            print "free"
+            self.writing_status = 1
 
     def img_callback(self, data):
         """
@@ -83,7 +98,11 @@ class SudokuMain(object):
         Makes sure that actions run in order by waiting for response from service
         """
         time.sleep(1)
-        while self.status == 0:
+        while self.status == 0 or self.writing_status == 0:
+            if self.status == 0:
+                print "busy"
+            else:
+                print "writing"
             pass
 
     def move_xyz(self, x, y, z):
@@ -120,9 +139,13 @@ class SudokuMain(object):
         Move edwin to the center position where it can take a good picture
         :return: None
         """
-        self.move_xyz(x=-1500, y=3100, z=4700)
+        # self.move_xyz(x=-1500, y=3100, z=4700)
+        # self.check_completion()
+        # self.move_head(hand_value=3400, wrist_value=4280)
+
+        self.move_xyz(x=0, y=3400, z=4700)
         self.check_completion()
-        self.move_head(hand_value=3400, wrist_value=4280)
+        self.move_head(hand_value=3350, wrist_value=4020)
 
     def capture_piture(self):
         while self.frame is None:
@@ -143,6 +166,27 @@ class SudokuMain(object):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+    def write_number(self, row, col, number):
+        x, y, z = self.get_cordinates(row, col)
+        self.move_xyz(x, y, z + 200)
+        self.check_completion()
+        data = Edwin_Shape(x=x, y=y, z=z-8, shape=str(number))
+        self.write_pub.publish(data)
+        self.check_completion()
+
+    def write_numbers(self):
+        solution = self.sudoku.solution
+        for cell in solution:
+            row, col, number = cell.get_rc_num()
+            self.write_number(row, col, number)
+
+    def test_write_numbers(self):
+        for i in range(4):
+            for j in range(4):
+                print "writing", i, j
+                self.write_number(i, j, 8)
+                self.check_completion()
+
     def run(self):
         """
         Main function that runs everything
@@ -154,10 +198,101 @@ class SudokuMain(object):
         self.check_completion()
         self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.n)
         self.sudoku.print_sudoku()
-
+        #
         # TODO: Move the arm to write the solution
         # self.capture_video()
+        # self.write_numbers()
+        # self.write_number(3, 3, 8)
+        # self.move_xyz(x=0, y=3400, z=4700)
+        # self.test_write_numbers()
 
+    def get_cordinates(self, row, col):
+        if row == 0 and col == 0:
+            x = -1500
+            y = 6500
+            z = -780
+
+        elif row == 0 and col == 1:
+            x = -400
+            y = 6500
+            z = -770
+
+        elif row == 0 and col == 2:
+            x = 800
+            y = 6500
+            z = -770
+
+        elif row == 0 and col == 3:
+            x = 1900
+            y = 6500
+            z = -770
+
+        elif row == 1 and col == 0:
+            x = -1500
+            y = 5400
+            z = -765
+
+        elif row == 1 and col == 1:
+            x = -450
+            y = 5400
+            z = -765
+
+        elif row == 1 and col == 2:
+            x = 700
+            y = 5400
+            z = -760
+
+        elif row == 1 and col == 3:
+            x = 1900
+            y = 5400
+            z = -760
+
+        elif row == 2 and col == 0:
+            x = -1500
+            y = 4200
+            z = -740
+
+        elif row == 2 and col == 1:
+            x = -400
+            y = 4300
+            z = -740
+
+        elif row == 2 and col == 2:
+            x = 700
+            y = 4300
+            z = -745
+
+        elif row == 2 and col == 3:
+            x = 1900
+            y = 4400
+            z = -750
+
+        elif row == 3 and col == 0:
+            x = -1500
+            y = 3200
+            z = -735
+
+        elif row == 3 and col == 1:
+            x = -450
+            y = 3200
+            z = -738
+
+        elif row == 3 and col == 2:
+            x = 700
+            y = 3200
+            z = -730
+
+        elif row == 3 and col == 3:
+            x = 1900
+            y = 3200
+            z = -740
+
+        else:
+            x = 0
+            y = 3400
+            z = 4700
+
+        return x, y, z
 
 if __name__ == '__main__':
     sudoku_game = SudokuMain(n=4)

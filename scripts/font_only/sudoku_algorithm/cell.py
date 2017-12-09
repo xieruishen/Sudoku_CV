@@ -74,3 +74,9 @@ class Cell:
         :return: int: cell position
         """
         return self.row * self.n ** 2 + self.col
+
+    def get_rc_num(self):
+        if self.get_number() == -1:
+            return -1, -1, -1
+
+        return self.row, self.col, self.get_number()
