@@ -170,7 +170,7 @@ class SudokuMain(object):
         x, y, z = self.get_cordinates(row, col)
         self.move_xyz(x, y, z + 200)
         self.check_completion()
-        data = Edwin_Shape(x=x, y=y, z=z - 40, shape=str(number))
+        data = Edwin_Shape(x=x, y=y, z=z - 75, shape=str(number))
         self.write_pub.publish(data)
         self.check_completion()
         self.move_xyz(x, y, z + 200)
@@ -218,9 +218,9 @@ class SudokuMain(object):
         #     self.write_numbers()
         #     self.move_to_center()
 
-        self.write_number(3, 3, 8)
+        self.write_number(2, 0, 8)
         # self.move_xyz(x=0, y=3400, z=4700)
-        self.test_write_numbers()
+        # self.test_write_numbers()
 
     def get_cordinates(self, row, col):
         if row == 0 and col == 0:
@@ -246,17 +246,17 @@ class SudokuMain(object):
         elif row == 1 and col == 0:
             x = -1500
             y = 5400
-            z = -765
+            z = -760
 
         elif row == 1 and col == 1:
             x = -450
             y = 5400
-            z = -765
+            z = -760
 
         elif row == 1 and col == 2:
             x = 700
             y = 5400
-            z = -760
+            z = -758
 
         elif row == 1 and col == 3:
             x = 1900
@@ -266,17 +266,17 @@ class SudokuMain(object):
         elif row == 2 and col == 0:
             x = -1500
             y = 4200
-            z = -740
+            z = -760
 
         elif row == 2 and col == 1:
             x = -400
             y = 4300
-            z = -740
+            z = -755
 
         elif row == 2 and col == 2:
             x = 700
             y = 4300
-            z = -745
+            z = -753
 
         elif row == 2 and col == 3:
             x = 1900
@@ -296,7 +296,7 @@ class SudokuMain(object):
         elif row == 3 and col == 2:
             x = 700
             y = 3200
-            z = -730
+            z = -747
 
         elif row == 3 and col == 3:
             x = 1900
