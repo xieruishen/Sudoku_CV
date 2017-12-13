@@ -170,15 +170,20 @@ class SudokuMain(object):
         x, y, z = self.get_cordinates(row, col)
         self.move_xyz(x, y, z + 200)
         self.check_completion()
-        data = Edwin_Shape(x=x, y=y, z=z-8, shape=str(number))
+        data = Edwin_Shape(x=x, y=y, z=z - 40, shape=str(number))
         self.write_pub.publish(data)
+        self.check_completion()
+        self.move_xyz(x, y, z + 200)
         self.check_completion()
 
     def write_numbers(self):
         solution = self.sudoku.solution
         for cell in solution:
             row, col, number = cell.get_rc_num()
+            print row, col, number
             self.write_number(row, col, number)
+            if not self.continue_or_not():
+                break
 
     def test_write_numbers(self):
         for i in range(4):
@@ -186,25 +191,36 @@ class SudokuMain(object):
                 print "writing", i, j
                 self.write_number(i, j, 8)
                 self.check_completion()
+                # if not self.continue_or_not():
+                #     break
+
+    def continue_or_not(self):
+        answer = raw_input("Do you want me to continue (yes/no)?\n")
+        answer = answer.lower()
+        print answer
+        if answer == "yes" or answer == "y":
+            return True
+        return False
 
     def run(self):
         """
         Main function that runs everything
         :return: None
         """
+        # self.capture_video()
         self.move_to_center()
         self.check_completion()
-        self.capture_piture()
-        self.check_completion()
-        self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.n)
-        self.sudoku.print_sudoku()
-        #
-        # TODO: Move the arm to write the solution
-        # self.capture_video()
-        # self.write_numbers()
-        # self.write_number(3, 3, 8)
+        # self.capture_piture()
+        # self.check_completion()
+        # if self.continue_or_not():
+        #     self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.n)
+        #     self.sudoku.print_sudoku()
+        #     self.write_numbers()
+        #     self.move_to_center()
+
+        self.write_number(3, 3, 8)
         # self.move_xyz(x=0, y=3400, z=4700)
-        # self.test_write_numbers()
+        self.test_write_numbers()
 
     def get_cordinates(self, row, col):
         if row == 0 and col == 0:
@@ -285,7 +301,7 @@ class SudokuMain(object):
         elif row == 3 and col == 3:
             x = 1900
             y = 3200
-            z = -740
+            z = -735
 
         else:
             x = 0
@@ -293,6 +309,7 @@ class SudokuMain(object):
             z = 4700
 
         return x, y, z
+
 
 if __name__ == '__main__':
     sudoku_game = SudokuMain(n=4)
