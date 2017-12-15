@@ -1,3 +1,10 @@
+"""
+By Sherrie Shen & Khang Vu, 2017
+Last modified Dec 13, 2017
+
+This script is the master script of the Sudoku Game
+Currently works for 4x4 Sudoku boards
+"""
 import time
 
 import cv2
@@ -14,17 +21,19 @@ import get_sudoku
 
 class SudokuMain(object):
     """
-    The master class of the game Sudoku
+    Master class of the game Sudoku
     """
 
     def __init__(self, n=4):
         # init ROS nodes
+        self.route_string = 'R_sudoku_center'
+        self.z_offset = 75
         rospy.init_node('sudoku_gamemaster', anonymous=True)
 
         # init ROS subscribers to camera and status
         rospy.Subscriber('arm_cmd_status', String, self.status_callback, queue_size=10)
         rospy.Subscriber('writing_status', String, self.writing_status_callback, queue_size=20)
-        self.image_sub = rospy.Subscriber("usb_cam/image_raw", Image, self.img_callback)
+        rospy.Subscriber('usb_cam/image_raw', Image, self.img_callback)
 
         self.write_pub = rospy.Publisher('/write_cmd', Edwin_Shape, queue_size=10)
 
@@ -53,21 +62,31 @@ class SudokuMain(object):
         self.sudoku = None
 
     def status_callback(self, data):
+        """
+        Get status from arm_node
+        :param data: status callback
+        :return: None
+        """
         print "Arm status callback", data.data
         if data.data == "busy" or data.data == "error":
-            print "busy"
+            print "Busy"
             self.status = 0
         elif data.data == "free":
-            print "free"
+            print "Free"
             self.status = 1
 
     def writing_status_callback(self, data):
+        """
+        Get status from arm_write node
+        :param data: status callback
+        :return: None
+        """
         print "writing status callback", data.data
         if data.data == "writing":
-            print "busy"
+            print "Busy"
             self.writing_status = 0
         elif data.data == "done":
-            print "free"
+            print "Free"
             self.writing_status = 1
 
     def img_callback(self, data):
@@ -88,22 +107,31 @@ class SudokuMain(object):
 
         try:
             cmd_fnc(cmd)
-            print "command done"
+            print "Command done"
 
         except rospy.ServiceException, e:
             print ("Service call failed: %s" % e)
 
-    def check_completion(self):
+        self.check_completion()
+
+    def check_completion(self, duration=1.0):
         """
         Makes sure that actions run in order by waiting for response from service
         """
-        time.sleep(1)
+        time.sleep(duration)
+        r = rospy.Rate(10)
         while self.status == 0 or self.writing_status == 0:
             if self.status == 0:
-                print "busy"
+                print "Moving"
             else:
-                print "writing"
+                print "Writing"
+            r.sleep()
             pass
+
+    def route_move(self, route_string):
+        msg = "data: run_route:: " + route_string
+        print ("sending: ", msg)
+        self.request_cmd(msg)
 
     def move_xyz(self, x, y, z):
         self.x = x
@@ -131,7 +159,6 @@ class SudokuMain(object):
         :return: None
         """
         self.move_hand(hand_value)
-        self.check_completion()
         self.move_wrist(wrist_value)
 
     def move_to_center(self):
@@ -139,67 +166,111 @@ class SudokuMain(object):
         Move edwin to the center position where it can take a good picture
         :return: None
         """
-        # self.move_xyz(x=-1500, y=3100, z=4700)
-        # self.check_completion()
-        # self.move_head(hand_value=3400, wrist_value=4280)
-
         self.move_xyz(x=0, y=3400, z=4700)
-        self.check_completion()
         self.move_head(hand_value=3350, wrist_value=4020)
 
+    def move_to_center_route(self):
+        """
+        Move edwin to the center position where it can take a good picture
+        Using routes
+        :return: None
+        """
+        self.route_move(self.route_string)
+
     def capture_piture(self):
+        """
+        Capture picture from usb_cam and pass it to self.sudoku_image
+        :return: None
+        """
+        r = rospy.Rate(10)
         while self.frame is None:
+            r.sleep()
             pass
 
         self.sudoku_image = self.frame.astype(np.uint8)
-
         cv2.imshow('Image', self.sudoku_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
     def capture_video(self):
+        """
+        Capture video from usb_cam
+        :return: None
+        """
+        r = rospy.Rate(10)
         while self.frame is None:
+            r.sleep()
             pass
 
         while self.frame is not None:
+            r.sleep()
             cv2.imshow('Image', self.frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
     def write_number(self, row, col, number):
-        x, y, z = self.get_cordinates(row, col)
-        self.move_xyz(x, y, z + 200)
-        self.check_completion()
-        data = Edwin_Shape(x=x, y=y, z=z - 75, shape=str(number))
+        """
+        Move the arm to (row, col) and write a number
+        :return: None
+        """
+        x, y, z = self.get_coordinates_4_by_4(row, col)
+        self.move_xyz(x, y, z + 300)
+        data = Edwin_Shape(x=x, y=y, z=z - self.z_offset, shape=str(number))
         self.write_pub.publish(data)
         self.check_completion()
-        self.move_xyz(x, y, z + 200)
-        self.check_completion()
+        self.move_xyz(x, y, z + 300)
 
     def write_numbers(self):
+        """
+        Write solution on the Sudoku board
+        :return: None
+        """
         solution = self.sudoku.solution
         for cell in solution:
             row, col, number = cell.get_rc_num()
-            print row, col, number
+            print "row = %i, col = %i, num = %i" % (row, col, number)
             self.write_number(row, col, number)
             if not self.continue_or_not():
+                self.move_to_center()
                 break
 
     def test_write_numbers(self):
+        """
+        Test function to write numbers on the 4 x 4 board
+        :return: None
+        """
         for i in range(4):
             for j in range(4):
-                print "writing", i, j
+                print "Writing", i, j
                 self.write_number(i, j, 8)
-                self.check_completion()
                 # if not self.continue_or_not():
                 #     break
 
     def continue_or_not(self):
-        answer = raw_input("Do you want me to continue (yes/no)?\n")
-        answer = answer.lower()
-        print answer
-        if answer == "yes" or answer == "y":
+        """
+        Function asks the users if they want to continue the program.
+        There is a question asking if the users want to change the z_offset
+        :return: True to continue; False otherwise
+        """
+        answer = raw_input("Do you want me to continue (yes/no)? ").lower()
+        if "y" in answer:
+
+            answer = raw_input(
+                "Current offset is %s. Do you want to change the z_offset (yes/no)? " % self.z_offset).lower()
+            if "y" in answer:
+                while True:
+                    answer = raw_input("New z_offset = ")
+                    try:
+                        self.z_offset = int(answer)
+                        print self.z_offset
+                        break
+                    except ValueError:
+                        # Handle the exception
+                        print 'Invalid value. Please enter an integer.'
+            print "Continue"
             return True
+
+        print "Stopped"
         return False
 
     def run(self):
@@ -208,21 +279,23 @@ class SudokuMain(object):
         :return: None
         """
         # self.capture_video()
+        self.move_to_center_route()
         self.move_to_center()
-        self.check_completion()
-        # self.capture_piture()
-        # self.check_completion()
-        # if self.continue_or_not():
-        #     self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.n)
-        #     self.sudoku.print_sudoku()
-        #     self.write_numbers()
-        #     self.move_to_center()
+        self.capture_piture()
+        self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.n)
+        if self.continue_or_not():
+            self.sudoku.print_sudoku()
+            self.write_numbers()
+            self.move_to_center()
 
-        self.write_number(2, 0, 8)
-        # self.move_xyz(x=0, y=3400, z=4700)
-        # self.test_write_numbers()
-
-    def get_cordinates(self, row, col):
+    def get_coordinates_4_by_4(self, row, col):
+        """
+        Get coordinates x, y, z from row, col
+        Only applicable for 4 x 4 board
+        :param row: 0 to 3
+        :param col: 0 to 3
+        :return: x, y, z
+        """
         if row == 0 and col == 0:
             x = -1500
             y = 6500
@@ -246,27 +319,27 @@ class SudokuMain(object):
         elif row == 1 and col == 0:
             x = -1500
             y = 5400
-            z = -760
+            z = -770
 
         elif row == 1 and col == 1:
             x = -450
             y = 5400
-            z = -760
+            z = -770
 
         elif row == 1 and col == 2:
             x = 700
             y = 5400
-            z = -758
+            z = -768
 
         elif row == 1 and col == 3:
             x = 1900
             y = 5400
-            z = -760
+            z = -774
 
         elif row == 2 and col == 0:
             x = -1500
             y = 4200
-            z = -760
+            z = -758
 
         elif row == 2 and col == 1:
             x = -400
@@ -281,7 +354,7 @@ class SudokuMain(object):
         elif row == 2 and col == 3:
             x = 1900
             y = 4400
-            z = -750
+            z = -763
 
         elif row == 3 and col == 0:
             x = -1500
@@ -296,12 +369,12 @@ class SudokuMain(object):
         elif row == 3 and col == 2:
             x = 700
             y = 3200
-            z = -747
+            z = -744
 
         elif row == 3 and col == 3:
             x = 1900
             y = 3200
-            z = -735
+            z = -750
 
         else:
             x = 0

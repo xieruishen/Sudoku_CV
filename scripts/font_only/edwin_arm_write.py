@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+"""
+By Olin IRL
+Modified by Khang Vu, 2017
+Last modified Dec 13, 2017
+
+This script moves Edwin to write a letter on a specific x, y, z location
+Specifically used for Sudoku Game
+"""
+
 import time
 
 import rospy
@@ -20,7 +29,7 @@ class Writer:
         self.arm_pub = rospy.Publisher('arm_cmd', String, queue_size=10)
         self.writing_pub = rospy.Publisher("writing_status", String, queue_size=10)
 
-        print "starting edwin writer...."
+        print "Starting edwin writer...."
 
         self.status = 0
         self.w = 200
@@ -30,10 +39,10 @@ class Writer:
     def status_callback(self, data):
         print "Arm status callback", data.data
         if data.data == "busy" or data.data == "error":
-            print "busy"
+            print "Busy"
             self.status = 0
         elif data.data == "free":
-            print "free"
+            print "Free"
             self.status = 1
 
     def request_cmd(self, cmd):
@@ -43,11 +52,13 @@ class Writer:
 
         try:
             resp1 = cmd_fnc(cmd)
-            print "command done"
+            print "Command done"
 
 
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
+
+        self.check_completion()
 
     def make_letter_dictionary(self):
         w = self.w
@@ -187,8 +198,8 @@ class Writer:
 
     def write_letter(self, letter, data):
         strokes = self.letter_dictionary.get(letter, None)
-        if strokes == None:
-            print "letter not in dictionary"
+        if strokes is None:
+            print "Letter not in dictionary"
             return
 
         for stroke in strokes:
@@ -197,21 +208,22 @@ class Writer:
             elif stroke[2] == "d":
                 z = data.z
             else:
-                print "depth error in arm_write"
+                print "Depth error in arm_write"
                 return
 
             msg = "move_to:: " + str(data.x - stroke[0]) + ", " + str(data.y - stroke[1]) + ", " + str(z) + ", " + str(
                 0)
-            print "sending: ", msg
+            print "Sending: ", msg
             self.request_cmd(msg)
-            time.sleep(2)
 
     def check_completion(self):
         """
         Makes sure that actions run in order by waiting for response from service
         """
-        time.sleep(1)
+        time.sleep(0.75)
+        r = rospy.Rate(10)
         while self.status == 0:
+            r.sleep()
             pass
 
     def write_callback(self, data):
@@ -221,11 +233,9 @@ class Writer:
         # getting into position
         ready_motions = ["move_to:: " + str(data.x) + ", " + str(data.y) + ", " + str(data.z + 250) + ", " + str(0)]
         for motion in ready_motions:
-            print "sending: ", motion
+            print "Sending: ", motion
             self.request_cmd(motion)
-            self.check_completion()
 
-        self.check_completion()
         # data.shape is the string we want Edwin to write
         for letter in data.shape:
             self.write_letter(letter, data)
@@ -234,7 +244,6 @@ class Writer:
         self.writing_pub.publish("done")
 
     def run(self):
-        print "running"
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
             r.sleep()
