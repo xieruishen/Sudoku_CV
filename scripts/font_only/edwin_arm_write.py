@@ -2,7 +2,7 @@
 """
 By Olin IRL
 Modified by Khang Vu, 2017
-Last modified Dec 13, 2017
+Last modified Dec 15, 2017
 
 This script moves Edwin to write a letter on a specific x, y, z location
 Specifically used for Sudoku Game
@@ -23,10 +23,8 @@ class Writer:
         else:
             rospy.init_node('edwin_write', anonymous=True)
             rospy.Subscriber('/write_cmd', Edwin_Shape, self.write_callback, queue_size=10)
-            rospy.Subscriber('arm_cmd_status', String, self.status_callback, queue_size=10)
+            rospy.Subscriber('arm_status', String, self.status_callback, queue_size=10)
 
-        self.behavior_pub = rospy.Publisher('behaviors_cmd', String, queue_size=10)
-        self.arm_pub = rospy.Publisher('arm_cmd', String, queue_size=10)
         self.writing_pub = rospy.Publisher("writing_status", String, queue_size=10)
 
         print "Starting edwin writer...."
@@ -37,12 +35,10 @@ class Writer:
         self.make_letter_dictionary()
 
     def status_callback(self, data):
-        print "Arm status callback", data.data
+        print "Writing arm status callback", data.data
         if data.data == "busy" or data.data == "error":
-            print "Busy"
             self.status = 0
         elif data.data == "free":
-            print "Free"
             self.status = 1
 
     def request_cmd(self, cmd):
@@ -54,7 +50,6 @@ class Writer:
             resp1 = cmd_fnc(cmd)
             self.check_completion()
             print "Command done"
-
 
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
@@ -221,21 +216,14 @@ class Writer:
         """
         Makes sure that actions run in order by waiting for response from service
         """
-        time.sleep(1)
-        r = rospy.Rate(10)
+        time.sleep(1.5)
+        # r = rospy.Rate(10)
         while self.status == 0:
-            r.sleep()
+            # r.sleep()
             pass
 
     def write_callback(self, data):
         self.writing_pub.publish("writing")
-        time.sleep(1)
-
-        # getting into position
-        ready_motions = ["move_to:: " + str(data.x) + ", " + str(data.y) + ", " + str(data.z + 250) + ", " + str(0)]
-        for motion in ready_motions:
-            print "Sending: ", motion
-            self.request_cmd(motion)
 
         # data.shape is the string we want Edwin to write
         for letter in data.shape:
