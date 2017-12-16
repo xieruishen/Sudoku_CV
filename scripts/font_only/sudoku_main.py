@@ -107,12 +107,14 @@ class SudokuMain(object):
 
         try:
             cmd_fnc(cmd)
+            self.check_completion(1)
             print "Command done"
 
         except rospy.ServiceException, e:
             print ("Service call failed: %s" % e)
 
-        self.check_completion()
+        # self.check_completion(0)
+
 
     def check_completion(self, duration=1.0):
         """
@@ -280,13 +282,14 @@ class SudokuMain(object):
         """
         # self.capture_video()
         self.move_to_center_route()
-        self.move_to_center()
-        self.capture_piture()
-        self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.n)
-        if self.continue_or_not():
-            self.sudoku.print_sudoku()
-            self.write_numbers()
-            self.move_to_center()
+        # self.check_completion()
+        # self.move_to_center()
+        # self.capture_piture()
+        # self.sudoku = get_sudoku.from_image(im=self.sudoku_image, n=self.n)
+        # if self.continue_or_not():
+        #     self.sudoku.print_sudoku()
+        #     self.write_numbers()
+        #     self.move_to_center()
 
     def get_coordinates_4_by_4(self, row, col):
         """

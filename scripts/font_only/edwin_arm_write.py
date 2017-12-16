@@ -52,6 +52,7 @@ class Writer:
 
         try:
             resp1 = cmd_fnc(cmd)
+            self.check_completion()
             print "Command done"
 
 
@@ -220,7 +221,7 @@ class Writer:
         """
         Makes sure that actions run in order by waiting for response from service
         """
-        time.sleep(0.75)
+        time.sleep(1)
         r = rospy.Rate(10)
         while self.status == 0:
             r.sleep()
