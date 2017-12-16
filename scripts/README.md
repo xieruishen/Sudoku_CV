@@ -68,3 +68,4 @@ python sudoku_main.py
 ## Acknowledgments
 
 * ![Simple Digit Recognition OCR in OpenCV-Python](https://stackoverflow.com/questions/9413216/simple-digit-recognition-ocr-in-opencv-python)
+* [Olin Robotics](https://olinrobotics.github.io)
