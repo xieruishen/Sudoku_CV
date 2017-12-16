@@ -4,57 +4,53 @@ For this project, we programmed a robot arm Edwin to solve a 4x4 Sudoku.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
+YOu can download the sudoku grid used for this algorithm [here](https://drive.google.com/drive/folders/1KD8HssK76iSOaB6Fd9mHtr5TbYzTBgDm?usp=sharing)
 
-What things you need to install the software and how to install them
+
+To get the training data for different fonts, you can download the font dataset from [this link](https://drive.google.com/drive/folders/1nlYUBKpYsFesmsZJGm-G84Y8ue_JjK9_?usp=sharing)
+
+To generate font images for training, run the following code:
+```
+python /scripts/training_data/font_dataset_generator.py
+```
+The images will be stored in /training_data/font_images
+### Running the code
+
+Set up Ros Environment
+
 
 ```
-Give examples
+roscore
 ```
-
-### Installing
-
-A step by step series of examples that tell you have to get a development env running
-
-Say what the step will be
+Connect to Edwin node
 
 ```
-Give the example
+rosrun irl edwin_node.py
 ```
 
-And repeat
-
+Set up edwin routes and behaviors
 ```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
+rosrun irl edwin_routes.py
+rosrun irl edwin_behaviors.py
 ```
 
-### And coding style tests
-
-Explain what these tests test and why
-
+Connect to camera
 ```
-Give an example
+rosrun usb_cam usb_cam_node _video_device:='/dev/video1'
 ```
 
-## Deployment
+Set up edwin write node
+```
+rosrun irl edwin_write.py
+```
 
-Add additional notes about how to deploy this on a live system
+Main class of Sudoku game
+```
+python sudoku_main.py
+```
 
 ## Built With
 * Ros
